@@ -13,15 +13,9 @@ def main(
     path: Annotated[str, typer.Argument(help="path to STEP or -pnp.csv file")],
     bom: bool = typer.Option(False, "--bom", "-b", help="Export BOM"),
     pnp: bool = typer.Option(False, "--pnp", "-p", help="Export PnP"),
-    step_all: bool = typer.Option(
-        False, "--all", "-a", help="Export entire assembly STEP"
-    ),
-    step: bool = typer.Option(
-        False, "--step", "-s", help="Export STEP files for assembly components"
-    ),
-    svg: bool = typer.Option(
-        False, "--svg", "-S", help="Export SVG files for assembly components"
-    ),
+    step_all: bool = typer.Option(False, "--all", "-a", help="Export entire assembly STEP"),
+    step: bool = typer.Option(False, "--step", "-s", help="Export STEP files for assembly components"),
+    svg: bool = typer.Option(False, "--svg", "-S", help="Export SVG files for assembly components"),
 ) -> None:
     log.set_logging()
     assembly = Assembly(path)
@@ -33,6 +27,6 @@ def main(
     if step_all:
         assembly.export_assembly_step()
     if step:
-        assembly.export_step()
+        assembly.export("step")
     if svg:
-        assembly.export_svg()
+        assembly.export("svg")

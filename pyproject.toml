@@ -19,3 +19,6 @@ dependencies = [
 
 [project.scripts]
 stephen = "stephen:app"
+
+[tool.black]
+line-length = 120
