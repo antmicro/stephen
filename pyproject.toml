@@ -14,8 +14,8 @@ version = "0.0.1"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "cadquery", "python-slugify", "pandas"
+    "cadquery", "python-slugify", "pandas", "typer"
 ]
 
 [project.scripts]
-stephen = "stephen:main"
+stephen = "stephen:app"
