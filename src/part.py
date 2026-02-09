@@ -1,11 +1,12 @@
 import cadquery as cq
 from slugify import slugify
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Dict
 from pathlib import Path
 import logging
 from cadquery.occ_impl.geom import Location as CQ_Location
 from paths import Paths
+import step_utils
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +43,15 @@ class Part:
     _assembly: cq.Assembly
     _cq_object: cq.Solid
 
-    def export_step(self, dir: str) -> None:
+    def export_step(self, dir: str, metadata: Dict[str, str]) -> None:
         # properties get removed when saving separate step
         path = f"{dir}/{slugify(self.part_name)}.step"
         next(iter(self._cq_object.objects.values())).obj.export(path)
+        step_utils.add_metadata(path, metadata)
+
         logger.info(f"\t · {path}")
 
-    def export_svg(self, dir: str) -> None:
+    def export_svg(self, dir: str, *args) -> None:
         opt = {
             "width": 300,
             "showAxes": False,

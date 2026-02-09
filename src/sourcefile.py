@@ -9,6 +9,7 @@ import pandas
 import re
 import logging
 from log import log_success
+import step_utils
 
 logger = logging.getLogger(__name__)
 
@@ -74,14 +75,7 @@ class STEP(SourceFile):
         log_success("loaded CQ assembly object from {self.path}")
 
     def _load_data(self) -> None:
-        REGEX = r"#[0-9]+=PRODUCT\(\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*\(#[0-9]+\)\s*\)"
-
-        with open(self.path, "r") as step:
-            raw_step = step.read().replace("\n", "")
-
-        matches = re.findall(REGEX, raw_step, re.DOTALL)
-        matches = [[(item.strip("'\"")) for item in match] for match in matches]
-        self._data = {match[1]: match for match in matches}
+        self._data = step_utils.parse_product_data(self.path)
         log_success("parsed data from {self.path}")
 
 

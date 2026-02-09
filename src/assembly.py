@@ -7,8 +7,28 @@ import logging
 from typing import Literal
 from paths import Paths
 from log import log_success
+from pathlib import Path
+from datetime import datetime, timezone
+from typing import Tuple
+import git
+import step_utils
 
 logger = logging.getLogger(__name__)
+
+
+def get_commit_info() -> Tuple[str, str]:
+    try:
+        repo = git.Repo(Path.cwd())
+        sha, msg = repo.head.object.hexsha, repo.head.object.message.strip()
+        logger.info("Git metadata:")
+        logger.info(f"\t · commit SHA: {sha}")
+        logger.info(f"\t · commit message: {msg}")
+        return sha, msg
+    except git.exc.InvalidGitRepositoryError:
+        logger.warning(
+            "Current workdir doesn't seem to be a Git repository, passing empty commit message and SHA strings!"
+        )
+        return "$", "$"
 
 
 class Assembly:
@@ -26,9 +46,12 @@ class Assembly:
             raise FileNotFoundError(f"🔴 Incompatible file format: {path}")
 
         self.name = self.source.assembly.name
-        self.sha = ...
-        self.msg = ...
-
+        sha, msg = get_commit_info()
+        self.metadata = {
+            "time_stamp": datetime.now(timezone.utc).astimezone().isoformat(),
+            "commit_sha": sha,
+            "commit_msg": msg,
+        }
         self.parts = self.source.to_parts()
 
     def export(self, suffix=Literal["csv", "step"]) -> None:
@@ -40,16 +63,17 @@ class Assembly:
         for part in self.parts:
             if part.part_name in exported_parts:
                 continue
-            part.__getattribute__("export_" + suffix)(str(output_dir))
+            part.__getattribute__("export_" + suffix)(str(output_dir), self.metadata)
             exported_parts.append(part.part_name)
         log_success()
 
     def export_assembly_step(self) -> None:
         self.step_output_dir.mkdir(exist_ok=True)
-        path = f"{self.step_output_dir}/{self.source.assembly.name}.step"
+        path = f"{self.step_output_dir}/{slugify(self.source.assembly.name)}.step"
         logger.info(f"Exporting STEP files")
 
         self.source.assembly.export(path)
+        step_utils.add_metadata(path, self.metadata)
         logger.info(f"\t · {path}")
 
     def _to_dataframe(self) -> pd.DataFrame:
