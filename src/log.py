@@ -1,5 +1,7 @@
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 class CustomFormatter(logging.Formatter):
     """Class defining custom logger formatter."""
@@ -12,7 +14,7 @@ class CustomFormatter(logging.Formatter):
     red = "\x1b[31m"  # ;21
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"  # clears formating
-    format_str = "[%(asctime)s] [%(name)s] %(message)s"
+    format_str = "[%(asctime)s] %(message)s"
     FORMATS = {
         logging.DEBUG: blue + format_str + reset,
         logging.INFO: format_str,
@@ -38,3 +40,7 @@ def set_logging(use_debug: bool = False) -> None:
     stdout_handler.setLevel(level)
     stdout_handler.setFormatter(CustomFormatter())
     root.addHandler(stdout_handler)
+
+
+def log_success(msg: str | None = None) -> None:
+    logger.info(f"✔ {msg if msg else 'done'}")

@@ -2,7 +2,10 @@ import cadquery as cq
 from slugify import slugify
 from dataclasses import dataclass
 from typing import Tuple
+from pathlib import Path
 import logging
+from cadquery.occ_impl.geom import Location as CQ_Location
+from paths import Paths
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +39,13 @@ class Part:
     location: Location
     rotation: Rotation
     hierarchy: str
+    _assembly: cq.Assembly
     _cq_object: cq.Solid
 
     def export_step(self, dir: str) -> None:
         # properties get removed when saving separate step
         path = f"{dir}/{slugify(self.part_name)}.step"
-        self._cq_object.export(path)
+        next(iter(self._cq_object.objects.values())).obj.export(path)
         logger.info(f"\t · {path}")
 
     def export_svg(self, dir: str) -> None:
@@ -57,5 +61,28 @@ class Part:
         result.export(path, opt=opt)
         logger.info(f"\t · {path}")
 
+    def _load_cq_object(self) -> None:
+        if _cq_object := self._assembly.objects.get(self.hierarchy, None):
+            self._cq_object = _cq_object
+            return
+
+        path = f"{Paths.step_output_dir}/{slugify(self.part_name)}.step"
+        if Path(path).is_file():
+            shape = cq.importers.importStep(path)
+        else:
+            shape = cq.Compound.makeCompound([])
+
+        loc = CQ_Location(*self.location.to_tuple(), *self.rotation.to_tuple())
+
+        self._assembly.add(shape, name=self.ref, loc=loc)
+        self._cq_object = self._assembly.objects.get(self.ref)
+
     def __post_init__(self) -> None:
-        logger.info(f"\t · {self.ref}")
+        self._load_cq_object()
+        if self._is_compound():
+            logger.warning(f"\t · {self.ref}\t[STEP not found]")
+        else:
+            logger.info(f"\t · {self.ref}")
+
+    def _is_compound(self) -> bool:
+        return isinstance(next(iter(self._cq_object.objects.values())).obj, cq.Compound)

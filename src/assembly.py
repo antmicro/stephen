@@ -6,6 +6,7 @@ import pandas as pd
 import logging
 from typing import Literal
 from paths import Paths
+from log import log_success
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class Assembly:
                 continue
             part.__getattribute__("export_" + suffix)(str(output_dir))
             exported_parts.append(part.part_name)
+        log_success()
 
     def export_assembly_step(self) -> None:
         self.step_output_dir.mkdir(exist_ok=True)
@@ -59,19 +61,21 @@ class Assembly:
 
     def to_bom(self) -> None:
         self.doc_output_dir.mkdir(exist_ok=True)
-        path = {self.doc_output_dir / f"{slugify(self.source.assembly.name)}-bom.csv"}
+        path = Path(self.doc_output_dir / f"{slugify(self.source.assembly.name)}-bom.csv")
         logger.info(f"Exporting BOM to {path}")
 
         df = self._to_dataframe()
         df = df.groupby(["part_name", "part_number", "description"]).size().reset_index(name="quantity")
         df["step"] = df.apply(lambda col: slugify(col.part_name) + ".step", axis=1)
         df.to_csv(path, index=False, quoting=QUOTE_NONNUMERIC)
+        log_success()
 
     def to_pnp(self) -> None:
         self.doc_output_dir.mkdir(exist_ok=True)
-        path = {self.doc_output_dir / f"{slugify(self.source.assembly.name)}-pnp.csv"}
+        path = Path(self.doc_output_dir / f"{slugify(self.source.assembly.name)}-pnp.csv")
         logger.info(f"Exporting PnP file to {path}")
 
         df = self._to_dataframe()
-        df = df.drop("_cq_object", axis=1)
+        df = df.drop(["_cq_object", "_assembly"], axis=1)
         df.to_csv(path, index=False, quoting=QUOTE_NONNUMERIC)
+        log_success()
