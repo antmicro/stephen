@@ -72,11 +72,11 @@ class STEP(SourceFile):
 
     def _load_assembly(self) -> None:
         self.assembly = cq.Assembly().load(str(self.path))
-        log_success("loaded CQ assembly object from {self.path}")
+        log_success(f"loaded CQ assembly object from {self.path}")
 
     def _load_data(self) -> None:
         self._data = step_utils.parse_product_data(self.path)
-        log_success("parsed data from {self.path}")
+        log_success(f"parsed data from {self.path}")
 
 
 class CSV(SourceFile):
@@ -103,4 +103,4 @@ class CSV(SourceFile):
 
     def _load_data(self) -> None:
         self._data = pandas.read_csv(self.path)
-        log_success("parsed data from {self.path}")
+        log_success(f"parsed data from {self.path}")

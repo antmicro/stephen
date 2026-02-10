@@ -7,6 +7,7 @@ import logging
 from cadquery.occ_impl.geom import Location as CQ_Location
 from paths import Paths
 import step_utils
+from log import log_progress
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +45,12 @@ class Part:
     _cq_object: cq.Solid
 
     def export_step(self, dir: str, metadata: Dict[str, str]) -> None:
-        # properties get removed when saving separate step
         path = f"{dir}/{slugify(self.part_name)}.step"
         next(iter(self._cq_object.objects.values())).obj.export(path)
-        step_utils.add_metadata(path, metadata)
+        step_utils.add_metadata(path, metadata, self)
+        step_utils.add_properties(path, self)
 
-        logger.info(f"\t · {path}")
+        log_progress(path)
 
     def export_svg(self, dir: str, *args) -> None:
         opt = {
@@ -62,7 +63,7 @@ class Part:
         path = f"{dir}/{slugify(self.part_name)}.svg"
         result = cq.Workplane().newObject([self._cq_object.obj])
         result.export(path, opt=opt)
-        logger.info(f"\t · {path}")
+        log_progress(path)
 
     def _load_cq_object(self) -> None:
         if _cq_object := self._assembly.objects.get(self.hierarchy, None):
@@ -82,10 +83,8 @@ class Part:
 
     def __post_init__(self) -> None:
         self._load_cq_object()
-        if self._is_compound():
-            logger.warning(f"\t · {self.ref}\t[STEP not found]")
-        else:
-            logger.info(f"\t · {self.ref}")
+        level = "warning" if self._is_compound() else "info"
+        log_progress(self.ref, level)
 
     def _is_compound(self) -> bool:
         return isinstance(next(iter(self._cq_object.objects.values())).obj, cq.Compound)

@@ -6,12 +6,14 @@ import pandas as pd
 import logging
 from typing import Literal
 from paths import Paths
-from log import log_success
+from log import log_success, log_progress
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Tuple
 import git
 import step_utils
+from importlib.metadata import version
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ def get_commit_info() -> Tuple[str, str]:
     try:
         repo = git.Repo(Path.cwd())
         sha, msg = repo.head.object.hexsha, repo.head.object.message.strip()
-        logger.info("Git metadata:")
+        logger.info("Current repo Git metadata:")
         logger.info(f"\t · commit SHA: {sha}")
         logger.info(f"\t · commit message: {msg}")
         return sha, msg
@@ -47,14 +49,18 @@ class Assembly:
 
         self.name = self.source.assembly.name
         sha, msg = get_commit_info()
-        self.metadata = {
+        self.metadata_new = {
             "time_stamp": datetime.now(timezone.utc).astimezone().isoformat(),
             "commit_sha": sha,
             "commit_msg": msg,
+            "generator_ver": version("stephen"),
         }
+
+        self.parsed_metadata = step_utils.parse_metadata(path)
+
         self.parts = self.source.to_parts()
 
-    def export(self, suffix=Literal["csv", "step"]) -> None:
+    def export(self, suffix=Literal["svg", "step"]) -> None:
         output_dir = self.__getattribute__(suffix + "_output_dir")
         output_dir.mkdir(exist_ok=True)
         logger.info(f"Exporting {suffix.upper()} files")
@@ -63,18 +69,18 @@ class Assembly:
         for part in self.parts:
             if part.part_name in exported_parts:
                 continue
-            part.__getattribute__("export_" + suffix)(str(output_dir), self.metadata)
+            part.__getattribute__("export_" + suffix)(str(output_dir), self.metadata_new)
             exported_parts.append(part.part_name)
         log_success()
 
     def export_assembly_step(self) -> None:
         self.step_output_dir.mkdir(exist_ok=True)
         path = f"{self.step_output_dir}/{slugify(self.source.assembly.name)}.step"
-        logger.info(f"Exporting STEP files")
+        logger.info(f"Exporting assembly STEP file")
 
         self.source.assembly.export(path)
-        step_utils.add_metadata(path, self.metadata)
-        logger.info(f"\t · {path}")
+        step_utils.add_metadata(path, self.metadata_new)
+        log_progress(path)
 
     def _to_dataframe(self) -> pd.DataFrame:
         loc_df = pd.DataFrame([part.location.__dict__ for part in self.parts])
