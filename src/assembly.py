@@ -4,7 +4,7 @@ from slugify import slugify
 from csv import QUOTE_NONNUMERIC
 import pandas as pd
 import logging
-from typing import Literal
+from typing import Literal, List
 from paths import Paths
 from log import log_success, log_progress
 from pathlib import Path
@@ -13,6 +13,7 @@ from typing import Tuple
 import git
 import step_utils
 from importlib.metadata import version
+from metadata import Metadata
 
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ class Assembly:
 
     def __init__(self, path: str) -> None:
         self.source: SourceFile
+
+        self.metadata = Metadata(**step_utils.parse_metadata(path))
         if Path(path).suffix == ".csv":
             self.source = CSV(path)
         elif Path(path).suffix == ".step":
@@ -49,14 +52,7 @@ class Assembly:
 
         self.name = self.source.assembly.name
         sha, msg = get_commit_info()
-        self.metadata_new = {
-            "time_stamp": datetime.now(timezone.utc).astimezone().isoformat(),
-            "commit_sha": sha,
-            "commit_msg": msg,
-            "generator_ver": version("stephen"),
-        }
-
-        self.parsed_metadata = step_utils.parse_metadata(path)
+        self._metadata = Metadata(commit_sha=sha, commit_msg=msg, generator="stephen", generator_ver=version("stephen"))
 
         self.parts = self.source.to_parts()
 
@@ -69,7 +65,7 @@ class Assembly:
         for part in self.parts:
             if part.part_name in exported_parts:
                 continue
-            part.__getattribute__("export_" + suffix)(str(output_dir), self.metadata_new)
+            part.__getattribute__("export_" + suffix)(str(output_dir), self._metadata)
             exported_parts.append(part.part_name)
         log_success()
 
@@ -79,7 +75,9 @@ class Assembly:
         logger.info(f"Exporting assembly STEP file")
 
         self.source.assembly.export(path)
-        step_utils.add_metadata(path, self.metadata_new)
+        step_utils.add_metadata(path, self._metadata)
+        step_utils.add_properties_assembly(path, self.parts)
+
         log_progress(path)
 
     def _to_dataframe(self) -> pd.DataFrame:

@@ -37,7 +37,6 @@ class SourceFile:
 class STEP(SourceFile):
     def __init__(self, path: str) -> None:
         super().__init__(path)
-
         self._load_assembly()
         self._load_data()
 
@@ -51,6 +50,7 @@ class STEP(SourceFile):
             part_name = part[1].name.rsplit(":", 1)[0]
 
             if not self._data.get(part_name):
+                print("Im dying here")
                 continue
 
             parent_preffix = part[1].parent.name + "/"
