@@ -1,13 +1,14 @@
 import cadquery as cq
 from slugify import slugify
 from dataclasses import dataclass
-from typing import Tuple, Dict
+from typing import Tuple
 from pathlib import Path
 import logging
 from cadquery.occ_impl.geom import Location as CQ_Location
 from paths import Paths
-import step_utils
 from log import log_progress
+from parser import STParser
+from metadata import Metadata
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +45,14 @@ class Part:
     _assembly: cq.Assembly
     _cq_object: cq.Solid
 
-    def export_step(self, dir: str, metadata: Dict[str, str]) -> None:
+    def export_step(self, dir: str, metadata: Metadata) -> None:
         path = f"{dir}/{slugify(self.part_name)}.step"
         next(iter(self._cq_object.objects.values())).obj.export(path)
-        step_utils.add_metadata(path, metadata, self)
-        step_utils.add_properties(path, self)
+
+        _parser = STParser(path)
+        _parser.add_metadata(metadata)
+        _parser.add_properties(part=self)
+        _parser.to_step()
 
         log_progress(path)
 

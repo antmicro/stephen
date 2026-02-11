@@ -4,17 +4,15 @@ from slugify import slugify
 from csv import QUOTE_NONNUMERIC
 import pandas as pd
 import logging
-from typing import Literal, List
+from typing import Literal
 from paths import Paths
 from log import log_success, log_progress
 from pathlib import Path
-from datetime import datetime, timezone
 from typing import Tuple
 import git
-import step_utils
 from importlib.metadata import version
 from metadata import Metadata
-
+from parser import STParser
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +39,6 @@ class Assembly:
 
     def __init__(self, path: str) -> None:
         self.source: SourceFile
-
-        self.metadata = Metadata(**step_utils.parse_metadata(path))
         if Path(path).suffix == ".csv":
             self.source = CSV(path)
         elif Path(path).suffix == ".step":
@@ -75,8 +71,11 @@ class Assembly:
         logger.info(f"Exporting assembly STEP file")
 
         self.source.assembly.export(path)
-        step_utils.add_metadata(path, self._metadata)
-        step_utils.add_properties_assembly(path, self.parts)
+
+        _parser = self.source._parser if isinstance(self, STEP) else STParser(path)
+        _parser.add_metadata(self._metadata)
+        _parser.add_properties(parts=self.parts)
+        _parser.to_step()
 
         log_progress(path)
 

@@ -1,15 +1,13 @@
 import cadquery as cq
-from slugify import slugify
 from pathlib import Path
 from typing import Dict, List, Any
 from part import Location, Rotation, Part
 from cadquery.occ_impl.geom import Location as CQ_Location
 from paths import Paths
 import pandas
-import re
 import logging
-from log import log_success
-import step_utils
+from log import log_success, log_progress
+from parser import STParser
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +35,7 @@ class SourceFile:
 class STEP(SourceFile):
     def __init__(self, path: str) -> None:
         super().__init__(path)
+        self._parser = STParser(path)
         self._load_assembly()
         self._load_data()
 
@@ -75,8 +74,13 @@ class STEP(SourceFile):
         log_success(f"loaded CQ assembly object from {self.path}")
 
     def _load_data(self) -> None:
-        self._data = step_utils.parse_product_data(self.path)
+        self._data = self._parser.get_parts_data()
+        self._metadata = self._parser.get_metadata()
+
         log_success(f"parsed data from {self.path}")
+        logger.info(f"Metadata parsed from {self.path}:")
+        for v, k in self._metadata.items():
+            log_progress(f"{v}: {k}")
 
 
 class CSV(SourceFile):
