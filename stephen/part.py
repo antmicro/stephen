@@ -1,14 +1,15 @@
 import cadquery as cq
+from cadquery.occ_impl.geom import Location as CQ_Location
 from slugify import slugify
 from dataclasses import dataclass
 from typing import Tuple
 from pathlib import Path
 import logging
-from cadquery.occ_impl.geom import Location as CQ_Location
-from paths import Paths
-from log import log_progress
-from parser import STParser
-from metadata import Metadata
+
+from stephen.parser import STParser
+from stephen.metadata import Metadata
+from stephen.paths import Paths
+import stephen.log as log
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +50,12 @@ class Part:
         path = f"{dir}/{slugify(self.part_name)}.step"
         next(iter(self._cq_object.objects.values())).obj.export(path)
 
-        _parser = STParser(path)
-        _parser.add_metadata(metadata)
-        _parser.add_properties(part=self)
-        _parser.to_step()
+        parser = STParser(path)
+        parser.add_metadata(metadata)
+        parser.add_properties(part=self)
+        parser.to_step()
 
-        log_progress(path)
+        log.progress(path)
 
     def export_svg(self, dir: str, *args) -> None:
         opt = {
@@ -67,7 +68,8 @@ class Part:
         path = f"{dir}/{slugify(self.part_name)}.svg"
         result = cq.Workplane().newObject([self._cq_object.obj])
         result.export(path, opt=opt)
-        log_progress(path)
+
+        log.progress(path)
 
     def _load_cq_object(self) -> None:
         if _cq_object := self._assembly.objects.get(self.hierarchy, None):
@@ -88,7 +90,8 @@ class Part:
     def __post_init__(self) -> None:
         self._load_cq_object()
         level = "warning" if self._is_compound() else "info"
-        log_progress(self.ref, level)
+
+        log.progress(self.ref, level)
 
     def _is_compound(self) -> bool:
         return isinstance(next(iter(self._cq_object.objects.values())).obj, cq.Compound)

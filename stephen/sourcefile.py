@@ -1,20 +1,19 @@
 import cadquery as cq
+from cadquery.occ_impl.geom import Location as CQ_Location
 from pathlib import Path
 from typing import Dict, List, Any
-from part import Location, Rotation, Part
-from cadquery.occ_impl.geom import Location as CQ_Location
-from paths import Paths
-import pandas
+import pandas as pd
 import logging
-from log import log_success, log_progress
-from parser import STParser
+
+from stephen.part import Location, Rotation, Part
+from stephen.parser import STParser
+from stephen.paths import Paths
+import stephen.log as log
 
 logger = logging.getLogger(__name__)
 
 
 class SourceFile:
-    step_output_dir = Paths.step_output_dir
-
     def __init__(self, path: str) -> None:
         self.path = Path(path)
         if not self.path.is_file():
@@ -33,6 +32,8 @@ class SourceFile:
 
 
 class STEP(SourceFile):
+    step_output_dir = Paths.step_output_dir
+
     def __init__(self, path: str) -> None:
         super().__init__(path)
         self._parser = STParser(path)
@@ -49,7 +50,6 @@ class STEP(SourceFile):
             part_name = part[1].name.rsplit(":", 1)[0]
 
             if not self._data.get(part_name):
-                print("Im dying here")
                 continue
 
             parent_preffix = part[1].parent.name + "/"
@@ -71,16 +71,16 @@ class STEP(SourceFile):
 
     def _load_assembly(self) -> None:
         self.assembly = cq.Assembly().load(str(self.path))
-        log_success(f"loaded CQ assembly object from {self.path}")
+        log.success(f"loaded CQ assembly object from {self.path}")
 
     def _load_data(self) -> None:
         self._data = self._parser.get_parts_data()
         self._metadata = self._parser.get_metadata()
 
-        log_success(f"parsed data from {self.path}")
+        log.success(f"parsed data from {self.path}")
         logger.info(f"Metadata parsed from {self.path}:")
         for v, k in self._metadata.items():
-            log_progress(f"{v}: {k}")
+            log.progress(f"{v}: {k}")
 
 
 class CSV(SourceFile):
@@ -103,8 +103,8 @@ class CSV(SourceFile):
 
     def _load_assembly(self) -> None:
         self.assembly = cq.Assembly(name=self.path.stem.rsplit("-", 1)[0])
-        log_success("created CQ assembly object")
+        log.success("created CQ assembly object")
 
     def _load_data(self) -> None:
-        self._data = pandas.read_csv(self.path)
-        log_success(f"parsed data from {self.path}")
+        self._data = pd.read_csv(self.path)
+        log.success(f"parsed data from {self.path}")

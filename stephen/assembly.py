@@ -1,18 +1,18 @@
-from pathlib import Path
-from sourcefile import CSV, STEP, SourceFile
 from slugify import slugify
 from csv import QUOTE_NONNUMERIC
-import pandas as pd
-import logging
-from typing import Literal
-from paths import Paths
-from log import log_success, log_progress
 from pathlib import Path
-from typing import Tuple
-import git
+from typing import Tuple, Literal
 from importlib.metadata import version
-from metadata import Metadata
-from parser import STParser
+import pandas as pd
+import git
+import logging
+from jinja2 import Environment, FileSystemLoader
+
+from stephen.sourcefile import CSV, STEP, SourceFile
+from stephen.metadata import Metadata
+from stephen.parser import STParser
+from stephen.paths import Paths
+import stephen.log as log
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,8 @@ def get_commit_info() -> Tuple[str, str]:
         repo = git.Repo(Path.cwd())
         sha, msg = repo.head.object.hexsha, repo.head.object.message.strip()
         logger.info("Current repo Git metadata:")
-        logger.info(f"\t · commit SHA: {sha}")
-        logger.info(f"\t · commit message: {msg}")
+        log.progress(f"commit SHA: {sha}")
+        log.progress(f"commit message: {msg}")
         return sha, msg
     except git.exc.InvalidGitRepositoryError:
         logger.warning(
@@ -63,7 +63,7 @@ class Assembly:
                 continue
             part.__getattribute__("export_" + suffix)(str(output_dir), self._metadata)
             exported_parts.append(part.part_name)
-        log_success()
+        log.success()
 
     def export_assembly_step(self) -> None:
         self.step_output_dir.mkdir(exist_ok=True)
@@ -72,12 +72,12 @@ class Assembly:
 
         self.source.assembly.export(path)
 
-        _parser = self.source._parser if isinstance(self, STEP) else STParser(path)
-        _parser.add_metadata(self._metadata)
-        _parser.add_properties(parts=self.parts)
-        _parser.to_step()
+        parser = self.source._parser if isinstance(self, STEP) else STParser(path)
+        parser.add_metadata(self._metadata)
+        parser.add_properties(parts=self.parts)
+        parser.to_step()
 
-        log_progress(path)
+        log.progress(path)
 
     def _to_dataframe(self) -> pd.DataFrame:
         loc_df = pd.DataFrame([part.location.__dict__ for part in self.parts])
@@ -95,7 +95,7 @@ class Assembly:
         df = df.groupby(["part_name", "part_number", "description"]).size().reset_index(name="quantity")
         df["step"] = df.apply(lambda col: slugify(col.part_name) + ".step", axis=1)
         df.to_csv(path, index=False, quoting=QUOTE_NONNUMERIC)
-        log_success()
+        log.success()
 
     def to_pnp(self) -> None:
         self.doc_output_dir.mkdir(exist_ok=True)
@@ -105,4 +105,23 @@ class Assembly:
         df = self._to_dataframe()
         df = df.drop(["_cq_object", "_assembly"], axis=1)
         df.to_csv(path, index=False, quoting=QUOTE_NONNUMERIC)
-        log_success()
+        log.success()
+
+    def to_html(self) -> None:
+        environment = Environment(loader=FileSystemLoader(Paths.template_dir))
+        template = environment.get_template(Paths.bom_html_temp)
+
+        self.doc_output_dir.mkdir(exist_ok=True)
+        path = Path(self.doc_output_dir / f"{slugify(self.source.assembly.name)}-bom.html")
+        logger.info(f"Exporting HTML BOM to {path}")
+
+        df = self._to_dataframe()
+        df = df.groupby(["part_name", "part_number", "description"]).size().reset_index(name="quantity")
+        df["step"] = df.apply(lambda col: slugify(col.part_name) + ".step", axis=1)
+        df["svg"] = df.apply(lambda col: slugify(col.part_name) + ".svg", axis=1)
+
+        content = template.render(metadata=self._metadata, parts=df, project_name=self.source.assembly.name)
+
+        with open(path, mode="w", encoding="utf-8") as bom:
+            bom.write(content)
+        log.success()

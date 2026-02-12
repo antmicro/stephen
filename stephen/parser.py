@@ -1,8 +1,9 @@
 from pathlib import Path
-import re
 from typing import List, Optional, Dict, Any
-from metadata import Metadata
 from importlib.metadata import version
+import re
+
+from stephen.metadata import Metadata
 
 
 class STParser:

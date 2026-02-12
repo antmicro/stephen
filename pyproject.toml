@@ -2,6 +2,9 @@
 requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
+
 [project]
 name = "stephen"
 authors = [
@@ -14,11 +17,11 @@ version = "0.0.1"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "cadquery", "python-slugify", "pandas", "typer", "GitPython"
+    "cadquery", "python-slugify", "pandas", "typer", "GitPython", "Jinja2"
 ]
 
 [project.scripts]
-stephen = "stephen:app"
+stephen = "stephen.main:app"
 
 [tool.black]
 line-length = 120

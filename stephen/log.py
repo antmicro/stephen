@@ -43,9 +43,9 @@ def set_logging(use_debug: bool = False) -> None:
     root.addHandler(stdout_handler)
 
 
-def log_success(msg: str | None = None) -> None:
+def success(msg: str | None = None) -> None:
     logger.info(f"✔ {msg if msg else 'done'}")
 
 
-def log_progress(msg: str, level: Literal["info", "warning", "error"] = "info") -> None:
-    logger.__getattribute__(level)(f"\t · {msg}")
+def progress(msg: str, level: Literal["info", "warning", "error"] = "info") -> None:
+    getattr(logger, level)(f"\t · {msg}")
