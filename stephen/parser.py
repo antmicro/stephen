@@ -1,12 +1,19 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, TYPE_CHECKING
 from importlib.metadata import version
 import re
 
 from stephen.metadata import Metadata
 
+if TYPE_CHECKING:
+    from stephen.part import Part
+
 
 class STParser:
+    """STEP file parser class."""
+
     __product_start_regex__ = r"\s*=\s*PRODUCT\("
     __product_start_cq__ = "= PRODUCT("
     __product_regex__ = rf"#[0-9]+{__product_start_regex__}(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*\(\s*#[0-9]+\s*\)\s*\);"
@@ -18,40 +25,61 @@ class STParser:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.raw = ""
-        with open(path, "r") as raw:
-            self.raw = raw.read()
+        self.reload()
 
-    def to_step(self):
+    def to_step(self) -> None:
+        """Overwrite STEP at `self.path` location with contents stored in `self.raw`."""
+
         with open(self.path, "w") as step:
             step.write(self.raw)
 
-    def get_parts_data(self) -> Dict[str, List[Any]]:
+    def reload(self, path: Optional[str | Path] = None) -> None:
+        """Update `self.path` attribute and reload STEP contents to `self.raw`."""
+
+        if path:
+            self.path = Path(path)
+        with open(self.path, "r") as raw:
+            self.raw = raw.read()
+
+    def get_parts_data(self) -> Dict[str, List[str]]:
+        """
+        Parse all parts PRODUCT definitions and return them as a dictionary
+        with part name as keys and PRODUCT fields as list of strings as values.
+        """
+
         raw = self.raw.replace("\n", "")
         matches = re.findall(self.__product_regex__, raw, re.DOTALL)
         matches = [[(item.strip("'\"")) for item in match] for match in matches]
         return {match[1]: match for match in matches}
 
     def get_metadata(self) -> Dict[str, str]:
+        """Return parsed STEPhen metadata from STEP header as a dictionary."""
+
         return dict(re.findall(self.__header_metadata_regex__, self.raw))
 
-    def add_properties(self, part: Optional["Part"] = None, parts: Optional[List["Part"]] = None):
-        if part:  # this occurs for single step exports
-            regex = rf"{self.__product_start_regex__}[\s\S]*?,\("
-            self.raw = re.sub(regex, self._get_prop_str(part), self.raw, flags=re.DOTALL)
-            return
+    def add_properties(self, parts: List["Part"]) -> None:
+        """Update PRODUCT properties fields in `self.raw`."""
 
-        elif parts:
-            for part in parts:
+        for part in parts:
+            if len(parts) == 1:
+                regex = rf"{self.__product_start_regex__}[\s\S]*?,\("
+            else:
                 regex = rf"{self.__product_start_regex__}'{re.escape(part.part_name)}:.*?'[\s\S]*?,\("
-                self.raw = re.sub(regex, self._get_prop_str(part), self.raw, flags=re.DOTALL)
+            self.raw = re.sub(regex, self._get_prop_str(part), self.raw, flags=re.DOTALL)
 
-    def add_metadata(self, metadata: Metadata, part: Optional["Part"] = None):
+    def add_metadata(self, metadata: Metadata, part: Optional[Part] = None) -> None:
+        """Update metadata in STEP header in `self.raw`."""
+
         self.raw = re.sub(self.__header_regex__, self._get_header_str(metadata, part), self.raw, flags=re.DOTALL)
 
     def _get_prop_str(self, part: "Part") -> str:
+        """Prepare string with part properties to include in related PRODUCT line."""
+
         return f"{self.__product_start_cq__}'{part.part_number}','{part.part_name}', '{part.description}',("
 
-    def _get_header_str(self, metadata: Metadata, part: Optional["Part"]) -> str:
+    def _get_header_str(self, metadata: Metadata, part: Optional[Part]) -> str:
+        """Prepare string with passed metadata to include in STEP header."""
+
         _metadata = ",\n".join([f"/* {key} */ '{getattr(metadata, key)}'" for key in Metadata.get_attrs()])
 
         return f"""{self.__header_start__}

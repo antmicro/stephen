@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Antmicro STEPhen - {{project_name}} Bill of Materials</title>
+    <link rel="icon" href="favicon.ico">
+    <style>
+        body {
+            background-color: #000000;
+            color: #f2f2f7;
+            padding: 0;
+            margin: 0;
+            font-family: Inter, sans-serif;
+        }
+
+        div.header {
+            background-color: #0a0a0a;
+            border-bottom: 1px solid #3a3a3c;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            height: 65px;
+        }
+
+        div.header_content {
+            padding: 10px;
+            font-weight: 500;
+            line-height: 1.25;
+            font-size: 1.75rem;
+        }
+        
+        table,p {
+            width: 97%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        table {
+            border: 1px solid #3a3a3c;
+            border-collapse: collapse;
+            padding: 10px;
+            width: 97%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        th {
+            background-color: #0a0a0a;
+            height: 50px;
+        }
+
+        th, td {
+            border: 1px solid #3a3a3c;
+            padding: 10px;
+            text-align: center;
+            }
+        img {
+            width: 150px;
+            height: auto
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header_content"><img src="logo.svg" style="padding-top: 7px"></div>
+        <div class="header_content">{{project_name}} Bill of Materials</div>
+    </div>
+    <p class="metadata">
+        <b>Time stamp:</b> {{ metadata.time_stamp }}<br>
+        <b>Git comit SHA:</b> {{ metadata.commit_sha }}<br>
+        <b>Git comit message:</b> {{ metadata.commit_msg }}
+    </p>
+    <table style="width=100%">
+      <thead>
+            <tr>
+                <th scope="col">Part name</th>
+                <th scope="col">Part number</th>
+                <th scope="col" style="width: 25%">Description</th>
+                <th scope="col">Qty</th>
+                <th scope="col">STEP model</th>
+                <th scope="col">Preview</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for idx, part in parts.iterrows() %}
+            <tr>
+                <th scope="row">{{ part["part_name"] }}</th>
+                <td>{{ part["part_number"] }}</td>
+                <td>{{ part["description"] }}</td>
+                <td>{{ part["quantity"] }}</td>
+                <td>{{ part["step"] }}</td>
+                <td><img src="../svg/{{ part["svg"] }}" style="filter: invert(1)"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -3,6 +3,8 @@ from typing import Literal
 
 logger = logging.getLogger(__name__)
 
+Level = Literal["error", "warning", "info"]
+
 
 class CustomFormatter(logging.Formatter):
     """Class defining custom logger formatter."""
@@ -47,5 +49,12 @@ def success(msg: str | None = None) -> None:
     logger.info(f"✔ {msg if msg else 'done'}")
 
 
-def progress(msg: str, level: Literal["info", "warning", "error"] = "info") -> None:
-    getattr(logger, level)(f"\t · {msg}")
+def progress(msg: str, level: Level = "info") -> None:
+    match level:
+        case "error":
+            icon = "❌"
+        case "warning":
+            icon = "⚠️"
+        case _:
+            icon = ""
+    getattr(logger, level)(f"\t · {msg}{icon}")

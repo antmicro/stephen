@@ -1,0 +1,41 @@
+include:
+  - project: repositories/hardware-scripts
+    ref: main
+    file: ci_templates/.ci_python_w_docs.yml
+
+docs-build:
+  when: never
+docs-deploy:
+  when: never
+
+code-formatting:
+  script:
+    - black --check stephen/
+
+type-correctness:
+  script:
+    - poetry run mypy --install-types --non-interactive --disallow-untyped-defs stephen/
+
+.install_stephen: &install_stephen |-
+    export PATH=$HOME/.local/bin:$PATH
+    mkdir -p logs
+    apt-get -qqy update >> logs/debian_install.log
+    apt-get -qqy update --fix-missing >> logs/debian_install.log
+    apt update && apt-get -qqy install libgl1 git pip python3.11 python3-poetry python3.11-venv pipx >> logs/debian_install.log
+    python3.11 -m pipx install .
+
+test: &test
+  image: 'debian:bookworm'
+  stage: test
+  before_script:
+    - *install_stephen
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - stephen template/jetson-agx-thor-baseboard-enclosure.step --step --svg --bom --html --pnp
+  
+  artifacts:
+    paths:
+      - step/
+      - svg/
+      - html/
+      - doc/
