@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 @app.command()
 def main(
-    path: Annotated[str, typer.Argument(help="path to STEP or -pnp.csv file")],
+    path: Annotated[str, typer.Argument(help="path to STEP or -pos.csv file")],
     bom: bool = typer.Option(False, "--bom", "-b", help="Export BOM in CSV format"),
-    pnp: bool = typer.Option(False, "--pnp", "-p", help="Export PnP in CSV format"),
+    pos: bool = typer.Option(False, "--pos", "-p", help="Export position file in CSV format"),
     step_all: bool = typer.Option(False, "--all", "-a", help="Export entire assembly STEP"),
     step: bool = typer.Option(False, "--step", "-s", help="Export STEP files for assembly components"),
     svg: bool = typer.Option(False, "--svg", "-S", help="Export SVG files for assembly components"),
@@ -24,8 +24,8 @@ def main(
 
     if bom:
         assembly.to_bom()
-    if pnp:
-        assembly.to_pnp()
+    if pos:
+        assembly.to_pos()
     if step_all:
         assembly.export_assembly_step()
     if step:

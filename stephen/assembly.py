@@ -106,13 +106,13 @@ class Assembly:
 
         log.success()
 
-    def to_pnp(self) -> None:
-        """Export PnP file for the assembly as `*-pnp.csv` file."""
+    def to_pos(self) -> None:
+        """Export position file for the assembly as `*-pos.csv` file."""
 
         self.doc_output_dir.mkdir(exist_ok=True)
-        path = self.doc_output_dir / f"{slugify(self.source.assembly.name)}-pnp.csv"
+        path = self.doc_output_dir / f"{slugify(self.source.assembly.name)}-pos.csv"
 
-        logger.info(f"Exporting PnP file to {path}")
+        logger.info(f"Exporting position file to {path}")
 
         df = self._to_dataframe()
         df = df.drop(["_cq_object", "_assembly"], axis=1)
