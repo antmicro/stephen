@@ -7,7 +7,7 @@ This is a simple command-line output job automation tool for STEP file assemblie
 ## Features
 
 * generation of BoM files containing mechanical components of the assembly in CSV and HTML formats
-* generation of PnP-like files containing positions of each mechanical components in 3D space
+* generation of position files containing coordinates and rotations of each mechanical components in 3D space
 * exporting assembly components as separate STEP files
 * generation of SVG previews of each assembly component
 * exporting assembly back from component STEP files and its PnP file
@@ -28,14 +28,14 @@ Usable options:
 
     --bom   -b    Export BOM in CSV format      
     --html  -h    Export BOM in HTML format                               
-    --pnp   -p    Export PnP in CSV format
+    --pos   -p    Export part positions in CSV format
     --all   -a    Export entire assembly STEP
     --step  -s    Export STEP files for assembly components
     --svg   -S    Export SVG files for assembly components
      
 You can test STEPhen using the model located in `template/` directory:
 
-    stephen template/jetson-agx-thor-baseboard-enclosure.step --step --svg --bom --html --pnp
+    stephen template/jetson-agx-thor-baseboard-enclosure.step --step --svg --bom --html --pos
 
 ## License
 
