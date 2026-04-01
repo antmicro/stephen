@@ -10,7 +10,7 @@ This is a simple command-line output job automation tool for STEP file assemblie
 * generation of position files containing coordinates and rotations of each mechanical components in 3D space
 * exporting assembly components as separate STEP files
 * generation of SVG previews of each assembly component
-* exporting assembly back from component STEP files and its PnP file
+* exporting assembly back from component STEP files and its position file
 
 ## Installation
 
