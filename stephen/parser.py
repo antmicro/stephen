@@ -16,7 +16,8 @@ class STParser:
 
     __product_start_regex__ = r"\s*=\s*PRODUCT\("
     __product_start_cq__ = "= PRODUCT("
-    __product_regex__ = rf"#[0-9]+{__product_start_regex__}(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*\(\s*#[0-9]+\s*\)\s*\);"
+    __product_line_regex__ = r"#[0-9]+\s*=\s*PRODUCT\s*\((.*?)\);"
+    __product_props_regex__ = r"'((?:''|[^'])*)'|\$"
     __header_start__ = "HEADER;"
     __header_end__ = "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));"
     __header_regex__ = rf"{re.escape(__header_start__)}?(.*?){re.escape(__header_end__)}"
@@ -47,10 +48,16 @@ class STParser:
         with part name as keys and PRODUCT fields as list of strings as values.
         """
 
+        products = []
         raw = self.raw.replace("\n", "")
-        matches = re.findall(self.__product_regex__, raw, re.DOTALL)
-        matches = [[(item.strip("'\"")) for item in match] for match in matches]
-        return {match[1]: match for match in matches}
+        product_raw_data = re.findall(self.__product_line_regex__, raw)
+
+        for product in product_raw_data:
+            matches = re.findall(self.__product_props_regex__, product)
+            matches = [match.replace("''", "'") if match != "$" else "" for match in matches]
+            products.append(matches)
+
+        return {product[1]: product for product in products}
 
     def get_metadata(self) -> Dict[str, str]:
         """Return parsed STEPhen metadata from STEP header as a dictionary."""
