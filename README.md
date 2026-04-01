@@ -33,9 +33,9 @@ Usable options:
     --step  -s    Export STEP files for assembly components
     --svg   -S    Export SVG files for assembly components
      
-You can test STEPhen using the model located in `template/` directory:
+You can test STEPhen using the model located in `example/` directory:
 
-    stephen template/jetson-agx-thor-baseboard-enclosure.step --step --svg --bom --html --pos
+    stephen example/hen.step --step --svg --bom --html --pos
 
 ## License
 

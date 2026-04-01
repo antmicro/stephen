@@ -31,7 +31,7 @@ test: &test
     - *install_stephen
   script:
     - export PATH=$HOME/.local/bin:$PATH
-    - stephen template/jetson-agx-thor-baseboard-enclosure.step --step --svg --bom --html --pos
+    - stephen example/hen.step --step --svg --bom --html --pos
   
   artifacts:
     paths:
