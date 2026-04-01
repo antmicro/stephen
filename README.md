@@ -2,6 +2,17 @@
 
 Copyright (c) 2026 [Antmicro](https://www.antmicro.com)
 
+<picture>
+  <!-- User prefers light mode: -->
+  <source srcset="images/stephen--light-mode.png" media="(prefers-color-scheme: light)"/>
+
+  <!-- User prefers dark mode: -->
+  <source srcset="images/stephen--dark-mode.png"  media="(prefers-color-scheme: dark)"/>
+
+  <!-- User has no color preference: -->
+  <img src="images/stephen--light-mode.png"/>
+</picture>
+
 This is a simple command-line output job automation tool for STEP file assemblies based on `cadquery` library. It allows to decompose a single complex STEP file into sub-parts and generate a mechanical Bill of Materials (BOM) and position files. It also enables recreating complex STEP models from single parts.
 
 ## Features
