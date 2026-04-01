@@ -70,7 +70,7 @@ class Part:
 
         log.progress(path)
 
-    def export_svg(self, dir: str, *args: Any) -> None:
+    def export_svg(self, dir_path: str, *args: Any) -> None:
         """Export part as SVG file."""
 
         if not self._cq_object:
@@ -83,11 +83,17 @@ class Part:
             "projectionDir": (0.5, 0.5, 0.5),
             "showHidden": True,
         }
-        path = f"{dir}/{slugify(self.part_name)}.svg"
-        result = cq.Workplane().newObject([self._cq_object.obj])  # type: ignore
-        result.export(path, opt=opt)
 
-        log.progress(path)
+        path = Path(f"{dir_path}/{slugify(self.part_name)}.svg")
+        result = cq.Workplane().newObject([self._cq_object.obj])  # type: ignore
+        result.export(str(path), opt=opt)
+
+        # Scale stroke to a consistent width across all part sizes.
+        svg = path.read_text()
+        stroke_width = svg.split('stroke-width="')[1].split('"')[0]
+        path.write_text(svg.replace(stroke_width, f"{float(stroke_width) * 2.5:.6g}"))
+
+        log.progress(str(path))
 
     def _load_cq_object(self) -> None:
         """
